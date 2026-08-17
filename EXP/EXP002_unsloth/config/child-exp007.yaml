@@ -1,0 +1,40 @@
+# child-exp007: 受賞解法(tonghuikang)データ + レシピ採用（0.85→0.87 本命）
+# データ: scripts/build_winner_cot.py で生成した winner_cot_v1.csv（ソルバ由来CoT + augmentation）
+#   → 事前に Kaggle へ **private Dataset** としてアップロード（ライセンス注意、scripts 参照）
+# レシピ: rank=32 / lr=2e-4 linear-decay→0 / warmup無し / 1 epoch（受賞解法準拠）
+# vs child-exp006: 学習レシピ同等で「データ」を受賞データに差し替えるのが主眼
+
+data:
+  # この Kaggle 環境はデータセットを /kaggle/input/datasets/{owner}/{slug}/ にマウントする。
+  # （notebook 側に glob フォールバックがあるので多少ズレても winner_cot_v1.csv を自動発見する）
+  path: /kaggle/input/datasets/hiranorm/nemotron-winner-cot-v1/winner_cot_v1.csv
+
+lora:
+  r: 32
+  alpha: 32
+  dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - in_proj
+    - out_proj
+    - up_proj
+    - down_proj
+    - lm_head
+
+training:
+  num_train_epochs: 1          # 受賞解法は 1 epoch（データ品質で勝負）
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16  # effective batch = 32
+  learning_rate: 2.0e-4
+  lr_scheduler_type: linear    # step-linear-decay→0（warmup 無し）
+  warmup_ratio: 0.0
+  max_length: 8192
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  weight_decay: 0.0
+  seed: 777

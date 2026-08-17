@@ -1,0 +1,71 @@
+# Nemotron Model Reasoning Challenge — 作業メモ
+
+> **2026-05-27〜 backlog 暫定併用**: タスク管理は `backlog task list --plain` に移行（CLAUDE.md は backlog CLI 指示）。本 MEMORY.md は設計決定・コンペ概要の参照用に残す。
+> **位置づけ: 軽量継続・深追い厳禁**（~6/8 で動かなければ確定終了）。主戦場は ROGII。
+
+## 現在地
+
+**フェーズ**: EXP002 child-exp005 学習実行中（2026-05-02）
+
+**LB トップ**: 0.87 / 自前ベスト: 0.85（child-exp001） / ギャップ: 0.02
+
+## 次のアクション
+
+- [x] child-exp004 タイムアウト失敗（epochs=2 + bs=1 で時間超過、2026-05-02）
+- [x] child-exp005 YAML 作成（child-exp004 から epochs=2→1 のみ変更）
+- [x] `hiranorm/nemotron-exp002-child-exp005` Dataset アップロード済み
+- [x] `notebooks/run-EXP002-child-exp005.ipynb` 生成済み
+- [ ] **child-exp005 学習完了待ち**（現在実行中）
+- [ ] Infer Notebook 実行 → 提出
+- [ ] LB 確認 → child-exp000（r=32, epoch=1, LB=0.84）と比較して r=64 の有効性を判断
+
+## 完了済み
+
+- [x] `research/` 調査資料 3 ファイル作成
+- [x] EXP000 最小ベースライン実装 → **LB: 0.53**（2026-04-22）
+- [x] EXP001 実装（CoT-SFT）→ mamba-ssm wheel 問題で廃棄
+- [x] 参照ノート（0.85）で lr sweep 手動実施（5e-5〜4e-4）→ 2e-4 がスイートスポット
+- [x] EXP002 作成（2026-04-29）: 0.85 ノートを YAML 駆動に改造
+  - `EXP/EXP002_unsloth/train.ipynb`（CHILD_EXP セル + YAML 読み込み）
+  - `EXP/EXP002_unsloth/infer.ipynb`（adapter zip パッケージング）
+  - `config/child-exp000/001/002.yaml` 準備完了
+- [x] `scripts/upload_exp_to_kaggle.sh` 作成（EXP-child-exp スラグ自動生成、run notebook 自動生成）
+- [x] child-exp000 Dataset アップロード（`hiranorm/nemotron-exp002-child-exp000`）
+- [x] child-exp001 Dataset アップロード（`hiranorm/nemotron-exp002-child-exp001`）
+- [x] `notebooks/run-EXP002-child-exp000.ipynb` 生成
+- [x] `notebooks/run-EXP002-child-exp001.ipynb` 生成
+- [x] プロジェクトを `old/` から復活
+- [x] child-exp000 学習完了 → Infer-only Notebook で提出 → **LB: 0.84**（2026-04-30）
+  - Train+Infer 分離フロー健全性確認済み
+- [x] child-exp001 学習完了 → 提出 → **LB: 0.85**（2026-04-30）← 自前フロー最高スコア
+- [x] child-exp002 Dataset アップロード（`hiranorm/nemotron-exp002-child-exp002`）
+- [x] `notebooks/run-EXP002-child-exp002.ipynb` 生成
+- [x] child-exp002 実行 → **OOM**（r=64, α=64, bs=2、RTX Pro 6000 で VRAM 超過、2026-04-30）
+- [x] child-exp003 コード準備完了（2026-04-30）
+  - `scripts/build_merged_cot.py` 作成・実行 → `data/merged-cot-v1/merged_cot_v1.csv`（14,388 rows, 55MB）
+  - `config/child-exp003.yaml` 作成（data.path 指定）
+  - `EXP/EXP002_unsloth/train.ipynb` 更新（DATASET_PATH を YAML 駆動化、後方互換あり）
+- [x] child-exp004 YAML 作成（bs=1, grad_accum=32, r=64）→ Dataset アップロード済み → タイムアウト失敗（2026-05-02）
+- [x] child-exp005 YAML 作成（child-exp004 + epochs=1）→ Dataset アップロード済み（2026-05-02）
+
+## 主要な設計決定
+
+| 決定 | 理由 |
+|------|------|
+| 提出形式はLoRAアダプターzip | メトリクスノートブックがLLM推論全体を担う仕組み |
+| SFT回答に `<think>...</think>` を付与 | メトリクスが `enable_thinking=True` で推論するため |
+| EXP002 はノートブック as EXP | mamba_ssm wheel の繊細な依存が 0.85 ノート環境で解決済み |
+| lr=2e-4 固定で他の axes を探索 | lr sweep（5e-5〜3e-4）で 2e-4 がスイートスポットと確認 |
+| child-exp001: A1+A2+A3 を一括投入 | 個別 ablation より先に最良候補を確認してから絞り込む |
+| child-exp001 は Train/Infer ノートを分離 | epochs=2 で約 8h → Kaggle 5h 制限を超えるため |
+| データは Tong Hui Kang CoT（dgxchen） | konbu17 よりサンプル数が多く、LB 0.85 を達成した実績あり |
+| target_modules にリスト指定（lm_head 含む） | 0.85 ノートの設定に準拠 |
+| SFT assistant に `<think>` を含めない | chat template が enable_thinking=True で自動付与するため |
+
+## コンペ概要メモ
+
+- **タスク**: 6カテゴリのパターン推論（few-shot）
+  - Bit Manipulation, Text Encryption, Equation Transformation, Gravitational Constant, Unit Conversion, Numeral Conversion
+- **評価**: maj@64（64回生成の多数決）→ adapter のみが我々の制御範囲
+- **制約**: Kaggle Notebooks, L4×4, インターネット不可, ≤5時間, 1日5提出
+- **締切**: 2026-06-15

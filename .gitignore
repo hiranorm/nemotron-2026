@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# macOS
+.DS_Store
+
+# データは載せない（Drive 側のアーカイブと Kaggle が正本。README の対応表を参照）
+data/**
+!data/inputs/.gitkeep
+!data/outputs/.gitkeep

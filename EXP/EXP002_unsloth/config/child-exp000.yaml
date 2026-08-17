@@ -1,0 +1,33 @@
+# child-exp000: 0.85 ノートの完全再現基準
+# 出典: fork-of-training-with-unsloth-to-achieve-0-85-lb-6.ipynb
+# 変更点: なし（YAML 管理への移行のみ）
+
+lora:
+  r: 32
+  alpha: 32
+  dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - in_proj
+    - out_proj
+    - up_proj
+    - down_proj
+    - lm_head
+
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16  # effective batch = 32
+  learning_rate: 2.0e-4
+  lr_scheduler_type: linear
+  warmup_ratio: 0.0
+  max_length: 8192
+  max_grad_norm: 1.0e9             # 元ノートの設定（事実上 OFF）
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  weight_decay: 0.0
+  seed: 777

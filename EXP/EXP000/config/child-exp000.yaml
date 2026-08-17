@@ -1,0 +1,33 @@
+# ============================================================
+# Nemotron Reasoning Challenge — EXP000 / child-exp000
+# Untrained LoRA baseline (公式デモ準拠)
+# 実行環境: Kaggle Notebooks (internet=OFF)
+# ============================================================
+
+exp_no: "EXP000"
+child_no: "child-exp000"
+description: "Untrained LoRA baseline, no fine-tuning"
+
+# ----------------------------------------------------------------
+# Paths (Kaggle Notebooks 前提)
+# ----------------------------------------------------------------
+paths:
+  adapter_dir: "/kaggle/working/sft_adapter"
+  submission_zip: "/kaggle/working/submission.zip"
+
+# ----------------------------------------------------------------
+# Model
+# ----------------------------------------------------------------
+model:
+  name: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16"
+  kagglehub_slug: "metric/nemotron-3-nano-30b-a3b-bf16/transformers/default"
+  torch_dtype: "bfloat16"
+
+# ----------------------------------------------------------------
+# LoRA（公式デモ準拠: r=32, alpha=16）
+# ----------------------------------------------------------------
+lora:
+  r: 32
+  lora_alpha: 16
+  target_modules_regex: ".*\\.(in_proj|out_proj|up_proj|down_proj)$"
+  lora_dropout: 0.05

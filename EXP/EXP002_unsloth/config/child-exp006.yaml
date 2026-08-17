@@ -1,0 +1,35 @@
+# child-exp006: 受賞解法(tonghuikang)の LR schedule に寄せる単変数 ablation
+# vs child-exp001(LB 0.85): lr_scheduler cosine→linear、warmup 0.03→0.0
+#   （受賞解法は lr=2e-4 を step-linear で 0 まで減衰・warmup 無し）
+# それ以外（rank=32, target_modules, epochs=2, batch, data）は child-exp001 を完全継承
+# 目的: データを変えずに「LR schedule だけ」で 0.85 から動くかを確認（最も安いレシピ寄せ）
+
+lora:
+  r: 32
+  alpha: 32
+  dropout: 0.0
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - in_proj
+    - out_proj
+    - up_proj
+    - down_proj
+    - lm_head
+
+training:
+  num_train_epochs: 2
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16  # effective batch = 32
+  learning_rate: 2.0e-4
+  lr_scheduler_type: linear   # ← 変更（cosine から）。warmup 後に 0 まで線形減衰
+  warmup_ratio: 0.0           # ← 変更（0.03 から）。受賞解法は warmup 無し
+  max_length: 8192
+  max_grad_norm: 1.0
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  weight_decay: 0.0
+  seed: 777

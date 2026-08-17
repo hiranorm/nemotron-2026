@@ -1,0 +1,43 @@
+exp_no: "EXP001"
+child_no: "child-exp000"
+description: "CoT-SFT with konbu17 verified dataset, reference hyperparameters (alpha=32)"
+
+paths:
+  adapter_dir: "/kaggle/working/sft_adapter"
+  submission_zip: "/kaggle/working/submission.zip"
+  sft_output_dir: "/kaggle/working/sft_output"
+
+model:
+  name: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16"
+  kagglehub_slug: "metric/nemotron-3-nano-30b-a3b-bf16/transformers/default"
+  torch_dtype: "bfloat16"
+
+lora:
+  r: 32
+  lora_alpha: 32  # 16→32: scaling factor 1.0 (reference notebook 準拠)
+  target_modules_regex: ".*\\.(in_proj|out_proj|up_proj|down_proj)$"
+  lora_dropout: 0.05
+
+data:
+  # konbu17 の検証済み CoT データセット (2,907 samples after type-based sampling)
+  # Kaggle Notebook の「Add data」で konbu17/nemotron-sft-lora-cot-selection を追加すること
+  cot_csv_path: "/kaggle/input/datasets/konbu17/nemotron-sft-lora-cot-selection/train_split_with_cot.csv"
+  prompt_suffix: "\nPlease put your final answer inside `\\boxed{}`. For example: `\\boxed{your answer}`"
+  type_samples:
+    "Numeral Conversion": 300
+    "Gravitational Constant": 400
+    "Unit Conversion": 700
+    "Text Encryption": 700
+    "Bit Manipulation": 607   # 全サンプル使用（正解率 40.3%、貴重）
+    "Equation Transformation": 200  # 全サンプル使用（正解率 13.6%、最難関）
+
+training:
+  num_train_epochs: 2
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8  # effective batch size = 8
+  learning_rate: 1.0e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.05
+  max_length: 4096
+  logging_steps: 10
+  seed: 123
